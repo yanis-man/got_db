@@ -103,6 +103,9 @@ class Api(Database):
 
     def get_chars_list(self):
         return self.pull_from_db("SELECT * FROM characters")
+    
+    def get_char_family(self, house_id:int):
+        return self.pull_from_db("SELECT * FROM characters WHERE house_id = ? ORDER BY display_name ASC;", (house_id,))
     ##########################################################
     #RELATIONS METHODS
     ##########################################################
@@ -121,12 +124,14 @@ class Api(Database):
 
         self.save_to_db("INSERT INTO char_relations (char_1_id, char_2_id, relation_type) VALUES (?,?,?)", (char_1, char_2, relation_type_id[0]))
 
-    def get_char_relations(self, char_reference : int):
-        QUERY = """
+    def get_char_family(self, char_reference : int):
+        QUERY1 = """
                 SELECT 
+                    char_relations.id,
 	                characters.display_name as char_name,
 	                char_relations_types.display_name as relation_name,
-                	relation_type 
+                	relation_type,
+                    char_2_id 
                 FROM 
                 	char_relations
                 INNER JOIN
@@ -137,6 +142,51 @@ class Api(Database):
                 	ON relation_type = char_relations_types.id
                 WHERE 
                 	char_1_id = ?;"""
+        QUERY2 = """
+                SELECT 
+                    char_relations.id,
+	                characters.display_name as char_name,
+	                char_relations_types.display_name as relation_name,
+                	relation_type,
+                    char_1_id 
+                FROM 
+                	char_relations
+                INNER JOIN
+                	characters
+                	ON char_1_id = characters.id
+                INNER JOIN
+                	char_relations_types
+                	ON relation_type = char_relations_types.id
+                WHERE 
+                	char_2_id = ?;"""
+        _family = self.pull_from_db(QUERY1, (char_reference,))
+        _family += self.pull_from_db(QUERY2, (char_reference,))
+
+        final_family = []
+
+        for family in _family:
+            print(family, end="\n")
+                
+
+        return _family
+
+    
+    def get_char_house_relation(self, char_reference:int):
+        QUERY = """SELECT
+                        characters.display_name as char_name,
+                	    houses.display_name as house_name,
+                	    chars_houses_relations_types.display_name as relation
+                    FROM
+                	    chars_houses_relations
+
+                    INNER JOIN characters
+                    ON characters.id = char_id
+
+                    INNER JOIN houses
+                    ON houses.id = chars_houses_relations.house_id
+
+                    INNER JOIN chars_houses_relations_types
+                    ON chars_houses_relations_types.id = relation_id
+                    WHERE char_id = ?;"""
         
         return self.pull_from_db(QUERY, (char_reference,))
-    
