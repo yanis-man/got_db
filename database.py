@@ -72,7 +72,32 @@ class Api(Database):
         # the house is referenced as a name
         return self.pull_from_db(f'SELECT * FROM houses WHERE display_name LIKE "%{house_reference}%"', only_first=True)
 
-        # get a house from : id or name
+    def get_house_members(self, house_reference:int):
+        QUERY = """
+                SELECT
+                    id,
+                	display_name
+                FROM
+                	characters
+                WHERE house_id = ?;"""
+        return self.pull_from_db(QUERY, (house_reference,))
+    def get_house_relations(self, house_reference:int):
+        QUERY = """ 
+        SELECT
+            char_id,
+        	characters.display_name,
+        	chars_houses_relations_types.display_name
+        FROM
+        	chars_houses_relations
+        INNER JOIN
+        characters ON characters.id = char_id
+        INNER JOIN
+        chars_houses_relations_types
+        ON chars_houses_relations_types.id = relation_id
+
+        WHERE chars_houses_relations.house_id = ?;"""
+
+        return self.pull_from_db(QUERY, (house_reference,))    
     ##########################################################
     # CHARACTERS METHODS
     ##########################################################
@@ -170,7 +195,6 @@ class Api(Database):
 
         return _family
 
-    
     def get_char_house_relation(self, char_reference:int):
         QUERY = """SELECT
                         characters.display_name as char_name,
