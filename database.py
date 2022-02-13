@@ -103,7 +103,6 @@ class Api(Database):
 
     def get_chars_list(self):
         return self.pull_from_db("SELECT * FROM characters")
-    
     ##########################################################
     #RELATIONS METHODS
     ##########################################################
@@ -122,7 +121,22 @@ class Api(Database):
 
         self.save_to_db("INSERT INTO char_relations (char_1_id, char_2_id, relation_type) VALUES (?,?,?)", (char_1, char_2, relation_type_id[0]))
 
-    def get_char_relations(self, char_reference : str):
-        if self._is_id_search(char_reference):
-            pass
+    def get_char_relations(self, char_reference : int):
+        QUERY = """
+                SELECT 
+	                characters.display_name as char_name,
+	                char_relations_types.display_name as relation_name,
+                	relation_type 
+                FROM 
+                	char_relations
+                INNER JOIN
+                	characters
+                	ON char_2_id = characters.id
+                INNER JOIN
+                	char_relations_types
+                	ON relation_type = char_relations_types.id
+                WHERE 
+                	char_1_id = ?;"""
+        
+        return self.pull_from_db(QUERY, (char_reference,))
     
